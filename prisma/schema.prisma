@@ -1,0 +1,46 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model SearchRun {
+  id             String    @id @default(cuid())
+  startedAt      DateTime  @default(now())
+  completedAt    DateTime?
+  status         String    @default("running") // running | completed | failed
+  companiesFound Int       @default(0)
+  contactsFound  Int       @default(0)
+}
+
+model Company {
+  id            String    @id @default(cuid())
+  name          String
+  linkedinUrl   String    @unique
+  industry      String?
+  employeeCount String? // "51-200", "201-500", etc.
+  region        String?
+  description   String?
+  fitScore      Int       @default(0) // 0-100
+  fitReason     String?
+  discoveredAt  DateTime  @default(now())
+  contacts      Contact[]
+}
+
+model Contact {
+  id             String   @id @default(cuid())
+  name           String
+  title          String?
+  linkedinUrl    String   @unique
+  relevanceScore Int      @default(0) // 0-100
+  whyContact     String?
+  companyId      String
+  company        Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  discoveredAt   DateTime @default(now())
+}
