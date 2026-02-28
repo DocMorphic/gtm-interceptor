@@ -4,42 +4,24 @@ export interface SearchResult {
   snippet: string;
 }
 
-interface CSEResponse {
-  items?: Array<{
-    title: string;
-    link: string;
-    snippet: string;
-  }>;
-}
+export async function webSearch(query: string): Promise<string> {
+  const webhookUrl = process.env.MAKE_WEBHOOK_URL;
 
-export async function googleSearch(
-  query: string,
-  numResults: number = 10
-): Promise<SearchResult[]> {
-  const apiKey = process.env.GOOGLE_CSE_API_KEY;
-  const cseId = process.env.GOOGLE_CSE_ID;
-
-  if (!apiKey || !cseId) {
-    throw new Error("Missing GOOGLE_CSE_API_KEY or GOOGLE_CSE_ID");
+  if (!webhookUrl) {
+    throw new Error("Missing MAKE_WEBHOOK_URL environment variable");
   }
 
-  const url = new URL("https://www.googleapis.com/customsearch/v1");
-  url.searchParams.set("key", apiKey);
-  url.searchParams.set("cx", cseId);
-  url.searchParams.set("q", query);
-  url.searchParams.set("num", String(Math.min(numResults, 10)));
-
-  const res = await fetch(url.toString());
+  const res = await fetch(webhookUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query }),
+  });
 
   if (!res.ok) {
     const errText = await res.text();
-    throw new Error(`Google CSE error ${res.status}: ${errText}`);
+    throw new Error(`Make.com webhook error ${res.status}: ${errText}`);
   }
 
-  const data: CSEResponse = await res.json();
-  return (data.items ?? []).map((item) => ({
-    title: item.title,
-    link: item.link,
-    snippet: item.snippet,
-  }));
+  // Make AI Web Search returns a text response, not structured JSON
+  return await res.text();
 }

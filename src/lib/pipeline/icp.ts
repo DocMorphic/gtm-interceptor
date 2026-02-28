@@ -17,23 +17,31 @@ Their product:
 
 Their existing clients include: BMW, Audi, Stellantis, TDK Electronics, BSH (Bosch Siemens), Henkel, OSRAM.
 
-Generate 6-8 Google search queries to find NEW prospective companies on LinkedIn.
-These should be manufacturing/industrial companies that would benefit from AI-driven quality optimization.
+Generate 10-12 diverse search queries to find NEW prospective companies on LinkedIn.
+Cast a WIDE net - any company with manufacturing or production operations is a potential prospect.
 
-Focus on:
-- Automotive manufacturers and suppliers (Tier 1 and Tier 2)
-- Electronics manufacturers
-- Industrial goods / consumer goods manufacturers
-- Companies in DACH region (Germany, Austria, Switzerland) and broader Europe
-- Mid-market to enterprise size (200+ employees)
+Include queries for ALL of these sectors:
+- Automotive manufacturers AND suppliers (Tier 1, Tier 2, Tier 3)
+- Electronics and semiconductor manufacturers
+- Industrial equipment and machinery manufacturers
+- Consumer goods / FMCG manufacturers (food, packaging, household)
+- Pharmaceutical and medical device manufacturers
+- Aerospace and defense manufacturers
+- Chemical and materials manufacturers
+- Energy equipment manufacturers
+- Plastics, metals, and precision parts manufacturers
+- Any company with factories or production lines
 
-Each query MUST include "site:linkedin.com/company" to restrict results to LinkedIn company pages.
+Geographic scope: Primarily DACH and Europe, but also include 1-2 queries for global manufacturers.
+Size: ALL sizes welcome - from 50-person workshops to large enterprises.
 
-Also provide the top 8-10 job titles/roles at these companies that a sales team should target (decision makers who would buy manufacturing AI software).
+Each query should search for LinkedIn company pages. Include terms like "LinkedIn company" or "linkedin.com/company" in the query.
+
+Also provide the top 10 job titles/roles that a sales team should target.
 
 Return JSON in this exact format:
 {
-  "searchQueries": ["site:linkedin.com/company ...", ...],
+  "searchQueries": ["LinkedIn company page manufacturing ...", ...],
   "targetRoles": ["Chief Technology Officer", ...]
 }
 `);
