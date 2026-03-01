@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -14,7 +11,7 @@ model SearchRun {
   id             String    @id @default(cuid())
   startedAt      DateTime  @default(now())
   completedAt    DateTime?
-  status         String    @default("running") // running | completed | failed
+  status         String    @default("running")
   companiesFound Int       @default(0)
   contactsFound  Int       @default(0)
 }
@@ -24,10 +21,10 @@ model Company {
   name          String
   linkedinUrl   String    @unique
   industry      String?
-  employeeCount String? // "51-200", "201-500", etc.
+  employeeCount String?
   region        String?
   description   String?
-  fitScore      Int       @default(0) // 0-100
+  fitScore      Int       @default(0)
   fitReason     String?
   discoveredAt  DateTime  @default(now())
   contacts      Contact[]
@@ -38,9 +35,9 @@ model Contact {
   name           String
   title          String?
   linkedinUrl    String   @unique
-  relevanceScore Int      @default(0) // 0-100
+  relevanceScore Int      @default(0)
   whyContact     String?
   companyId      String
-  company        Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   discoveredAt   DateTime @default(now())
+  company        Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
 }

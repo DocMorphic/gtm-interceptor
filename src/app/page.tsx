@@ -29,49 +29,53 @@ export default async function Home({ searchParams }: PageProps) {
   });
 
   return (
-    <div>
+    <div className="animate-fade-in">
       <SearchStatus />
 
-      <div className="flex gap-6">
-        <div className="w-64 shrink-0">
+      <div className="flex flex-col lg:flex-row gap-8">
+        <div className="w-full lg:w-64 shrink-0">
           <Suspense>
             <FilterSidebar />
           </Suspense>
         </div>
 
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           {companies.length === 0 ? (
-            <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="flex flex-col items-center justify-center py-24 animate-fade-in-up">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-100 to-violet-100 flex items-center justify-center mb-6">
                 <svg
-                  className="w-8 h-8 text-gray-400"
+                  className="w-8 h-8 text-indigo-400"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
+                  strokeWidth={1.5}
                 >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
                   />
                 </svg>
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-1">
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">
                 No prospects yet
               </h3>
-              <p className="text-sm text-gray-500 max-w-sm mx-auto">
-                Click &quot;Run Search Now&quot; above to discover prospective
-                companies using AI-powered analysis.
+              <p className="text-sm text-gray-400 text-center max-w-xs leading-relaxed">
+                Hit &quot;Run Discovery&quot; to let AI find and score high-value prospects for you.
               </p>
             </div>
           ) : (
             <div>
-              <p className="text-sm text-gray-500 mb-4">
-                {companies.length} prospective{" "}
-                {companies.length === 1 ? "company" : "companies"}
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-sm font-semibold text-gray-900">
+                  Prospects
+                </h2>
+                <span className="text-xs font-medium text-gray-400 tabular-nums">
+                  {companies.length} result{companies.length === 1 ? "" : "s"}
+                </span>
+              </div>
+
+              <div className="bg-white rounded-xl border border-gray-200/80 overflow-hidden shadow-sm stagger-children" suppressHydrationWarning>
                 {companies.map((company) => (
                   <CompanyCard key={company.id} company={company} />
                 ))}

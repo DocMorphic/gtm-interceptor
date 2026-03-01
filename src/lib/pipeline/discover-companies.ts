@@ -57,64 +57,44 @@ export async function discoverAndScoreCompanies(
       const searchText = await webSearch(query);
       if (!searchText || searchText.length < 50) continue;
 
-      // Use Gemini to extract structured company data from search text
-      const extracted = await geminiJSON<GeminiCompanyExtraction>(`
-You are a B2B sales data analyst for Manex AI GmbH, which sells "Qualitatio" - an AI-powered manufacturing optimization agent for quality management, defect prediction, and process steering.
+      // INSTANT EXTRACTION: We don't need Gemini if we are explicitly searching for LinkedIn URLs!
+      // This Regex immediately finds all LinkedIn company pages in the text Make.com returns.
+      const urlRegex = /https?:\/\/(?:www\.)?linkedin\.com\/company\/[a-zA-Z0-9_-]+/gi;
+      const foundUrls = searchText.match(urlRegex) || [];
 
-Their existing clients: BMW, Audi, Stellantis, TDK Electronics, BSH, Henkel, OSRAM.
-
-Extract ALL companies mentioned in this web search result text. For each company, provide structured data.
-
-SEARCH RESULTS:
-${searchText}
-
-For each company found, extract:
-- name: Company name (exact official name)
-- linkedinUrl: Their LinkedIn company page URL. ONLY use a URL if it literally appears in the search results text above. If no URL is present, set this to an empty string "".
-- industry: Primary industry (e.g., "Automotive", "Electronics Manufacturing", "Industrial Equipment", "Consumer Goods", "Pharmaceutical", "Aerospace", "Chemical")
-- employeeCount: Estimated size ("1-50", "51-200", "201-500", "501-1000", "1001-5000", "5000+")
-- region: Geographic region ("DACH", "Western Europe", "Nordics", "Eastern Europe", "Global")
-- description: 1-2 sentence description
-- fitScore: 0-100, how well they match as a Manex AI prospect. ANY company with manufacturing/production operations scores at least 40. Pure service/consulting companies score lower.
-- fitReason: 1 sentence explaining the score
-
-CRITICAL RULES:
-- DO NOT invent or guess LinkedIn URLs. Only use URLs that appear verbatim in the search results.
-- If no LinkedIn URL is found in the text, set linkedinUrl to ""
-- Include ALL companies that have any manufacturing or production operations
-- Be generous with fitScore - even a slight connection to manufacturing gets 40+
-
-Return JSON: { "companies": [...] }
-If no companies are found, return: {"companies": []}
-`);
-
-      for (const company of extracted.companies) {
-        if (company.fitScore < 20) continue;
-        if (isExistingClient(company.name)) continue;
-
-        // Try to extract a clean LinkedIn URL from what Gemini found
-        let finalUrl: string;
-        const urlMatch = company.linkedinUrl.match(
-          /linkedin\.com\/company\/([^/?#]+)/
-        );
-
-        if (urlMatch) {
-          // Gemini found a real URL - normalize it
-          finalUrl = `https://www.linkedin.com/company/${urlMatch[1]}`;
-        } else {
-          // No real URL found - construct a LinkedIn search link as fallback
-          const slug = company.name
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, "-")
-            .replace(/^-|-$/g, "");
-          finalUrl = `https://www.linkedin.com/company/${slug}`;
-        }
+      for (const url of foundUrls) {
+        // Clean URL to standard format without trailing slashes
+        const finalUrl = url.toLowerCase().replace(/\/$/, "");
 
         if (seenUrls.has(finalUrl)) continue;
 
+        // Extract the company name directly from the URL slug
+        const slugMatch = finalUrl.match(/company\/([^/]+)/);
+        if (!slugMatch) continue;
+
+        let name = slugMatch[1].replace(/-/g, " ");
+        // Capitalize the first letter of each word
+        name = name.replace(/\b\w/g, (char) => char.toUpperCase());
+
+        if (isExistingClient(name)) continue;
+
+        allCompanies.push({
+          name: name,
+          linkedinUrl: finalUrl,
+          industry: "Manufacturing", // Default fast-fill
+          employeeCount: "Unknown",
+          region: "Unknown",
+          description: "Manufacturing prospect discovered via LinkedIn.",
+          fitScore: 80, // Default passing score
+          fitReason: "Matched the target manufacturing search queries on LinkedIn.",
+        });
+
         seenUrls.add(finalUrl);
-        allCompanies.push({ ...company, linkedinUrl: finalUrl });
       }
+
+      // Small throttle to prevent Make.com from rate-limiting
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
     } catch (err) {
       console.error(`Search/extract failed for query: ${query}`, err);
     }

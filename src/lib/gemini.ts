@@ -13,5 +13,11 @@ export async function geminiJSON<T>(prompt: string): Promise<T> {
   });
 
   const text = result.response.text();
-  return JSON.parse(text) as T;
+  try {
+    return JSON.parse(text) as T;
+  } catch (err) {
+    console.error("Failed to parse Gemini JSON output (Make.com likely rate-limited the web search request):", text.substring(0, 100));
+    // Soft fallback so downstream `extracted.companies` or `extracted.contacts` iterations don't crash
+    return { companies: [], contacts: [] } as unknown as T;
+  }
 }

@@ -33,6 +33,8 @@ export function FilterSidebar() {
   const currentIndustry = searchParams.get("industry") || "All";
   const currentMinScore = searchParams.get("minScore") || "0";
 
+  const hasActiveFilters = currentRegion !== "All" || currentEmployeeCount !== "All" || currentIndustry !== "All" || currentMinScore !== "0";
+
   const updateFilter = useCallback(
     (key: string, value: string) => {
       const params = new URLSearchParams(searchParams.toString());
@@ -46,81 +48,103 @@ export function FilterSidebar() {
     [router, searchParams]
   );
 
+  const clearAll = useCallback(() => {
+    router.push("/");
+  }, [router]);
+
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-5">
-      <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
-        Filters
-      </h2>
+    <div className="animate-slide-in-right sticky top-20 space-y-5">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
+          Filters
+        </h2>
+        {hasActiveFilters && (
+          <button
+            onClick={clearAll}
+            className="text-[11px] font-medium text-indigo-500 hover:text-indigo-700 transition-colors"
+          >
+            Clear all
+          </button>
+        )}
+      </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Region
-        </label>
-        <select
+      <div className="space-y-4">
+        <FilterGroup
+          label="Region"
+          options={REGIONS}
           value={currentRegion}
-          onChange={(e) => updateFilter("region", e.target.value)}
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          {REGIONS.map((r) => (
-            <option key={r} value={r}>
-              {r}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Company Size
-        </label>
-        <select
-          value={currentEmployeeCount}
-          onChange={(e) => updateFilter("employeeCount", e.target.value)}
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          {EMPLOYEE_COUNTS.map((e) => (
-            <option key={e} value={e}>
-              {e}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Industry
-        </label>
-        <select
-          value={currentIndustry}
-          onChange={(e) => updateFilter("industry", e.target.value)}
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          {INDUSTRIES.map((i) => (
-            <option key={i} value={i}>
-              {i}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Min Fit Score: {currentMinScore}
-        </label>
-        <input
-          type="range"
-          min="0"
-          max="100"
-          step="10"
-          value={currentMinScore}
-          onChange={(e) => updateFilter("minScore", e.target.value)}
-          className="w-full"
+          onChange={(v) => updateFilter("region", v)}
         />
-        <div className="flex justify-between text-xs text-gray-400">
-          <span>0</span>
-          <span>50</span>
-          <span>100</span>
+
+        <FilterGroup
+          label="Company Size"
+          options={EMPLOYEE_COUNTS}
+          value={currentEmployeeCount}
+          onChange={(v) => updateFilter("employeeCount", v)}
+        />
+
+        <FilterGroup
+          label="Industry"
+          options={INDUSTRIES}
+          value={currentIndustry}
+          onChange={(v) => updateFilter("industry", v)}
+        />
+
+        <div className="pt-1">
+          <label className="flex items-center justify-between text-[13px] font-medium text-gray-600 mb-3">
+            <span>Min. Fit Score</span>
+            <span className="text-sm font-semibold text-gray-900 tabular-nums">{currentMinScore}</span>
+          </label>
+          <input
+            type="range"
+            min="0"
+            max="100"
+            step="10"
+            value={currentMinScore}
+            onChange={(e) => updateFilter("minScore", e.target.value)}
+            className="w-full h-1.5 bg-gray-200 rounded-full appearance-none cursor-pointer accent-indigo-500 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-indigo-500 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:shadow-indigo-500/20"
+          />
+          <div className="flex justify-between text-[10px] text-gray-300 mt-1.5 font-medium px-0.5">
+            <span>0</span>
+            <span>50</span>
+            <span>100</span>
+          </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function FilterGroup({
+  label,
+  options,
+  value,
+  onChange,
+}: {
+  label: string;
+  options: string[];
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div>
+      <label className="block text-[13px] font-medium text-gray-600 mb-2">
+        {label}
+      </label>
+      <div className="flex flex-wrap gap-1.5">
+        {options.map((option) => (
+          <button
+            key={option}
+            onClick={() => onChange(option)}
+            className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
+              value === option
+                ? "bg-indigo-500 text-white shadow-sm shadow-indigo-500/20"
+                : "bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700"
+            }`}
+          >
+            {option}
+          </button>
+        ))}
       </div>
     </div>
   );

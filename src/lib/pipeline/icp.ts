@@ -17,31 +17,24 @@ Their product:
 
 Their existing clients include: BMW, Audi, Stellantis, TDK Electronics, BSH (Bosch Siemens), Henkel, OSRAM.
 
-Generate 10-12 diverse search queries to find NEW prospective companies on LinkedIn.
+Generate EXACTLY 2 diverse Google Search queries to find NEW prospective companies on LinkedIn.
 Cast a WIDE net - any company with manufacturing or production operations is a potential prospect.
 
-Include queries for ALL of these sectors:
-- Automotive manufacturers AND suppliers (Tier 1, Tier 2, Tier 3)
-- Electronics and semiconductor manufacturers
-- Industrial equipment and machinery manufacturers
-- Consumer goods / FMCG manufacturers (food, packaging, household)
-- Pharmaceutical and medical device manufacturers
-- Aerospace and defense manufacturers
-- Chemical and materials manufacturers
-- Energy equipment manufacturers
-- Plastics, metals, and precision parts manufacturers
-- Any company with factories or production lines
+Include queries for these sectors:
+- Automotive manufacturers AND suppliers
+- Electronics, machinery, or industrial equipment manufacturers
 
 Geographic scope: Primarily DACH and Europe, but also include 1-2 queries for global manufacturers.
-Size: ALL sizes welcome - from 50-person workshops to large enterprises.
 
-Each query should search for LinkedIn company pages. Include terms like "LinkedIn company" or "linkedin.com/company" in the query.
+CRITICAL RULE:
+Every single query MUST be a strict Google Dork that ONLY searches for LinkedIn company pages. 
+Every query MUST start with exactly: site:linkedin.com/company/
 
 Also provide the top 10 job titles/roles that a sales team should target.
 
 Return JSON in this exact format:
 {
-  "searchQueries": ["LinkedIn company page manufacturing ...", ...],
+  "searchQueries": ["site:linkedin.com/company/ \"manufacturing\" \"germany\"", ...],
   "targetRoles": ["Chief Technology Officer", ...]
 }
 `);
