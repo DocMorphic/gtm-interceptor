@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -e \"const Database = require\\(''better-sqlite3''\\); const db = new Database\\(''./dev.db''\\); const low = db.prepare\\(\"\"SELECT c.id, c.name, c.fitScore, \\(SELECT COUNT\\(*\\) FROM Contact WHERE companyId = c.id\\) as cnt FROM Company c WHERE c.fitScore >= 80 AND \\(SELECT COUNT\\(*\\) FROM Contact WHERE companyId = c.id\\) < 2 ORDER BY c.fitScore DESC\"\"\\).all\\(\\); console.log\\(''Top companies with < 2 contacts:'', low.length\\); low.forEach\\(r => console.log\\(''  '', r.name, ''\\(score:'', r.fitScore + ''\\) -'', r.cnt, ''contacts''\\)\\);\")"
+    ]
+  }
+}

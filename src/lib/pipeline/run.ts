@@ -53,25 +53,9 @@ export async function runPipeline() {
         icp.targetRoles
       );
 
-      // Guarantee at least 2 contacts per company — synthesize leadership placeholders if needed
+      // Log if company has fewer than 2 real contacts — we no longer synthesize fake placeholder names
       if (contacts.length < 2) {
-        const fallbackLeaders = [
-          { name: `CEO of ${savedCompany.name}`, title: "Chief Executive Officer", relevanceScore: 95, whyContact: `Top decision-maker at ${savedCompany.name} — ideal for executive sponsorship of Qualitatio.` },
-          { name: `CTO of ${savedCompany.name}`, title: "Chief Technology Officer", relevanceScore: 90, whyContact: `Leads technology adoption at ${savedCompany.name} — key influencer for AI/manufacturing solutions.` },
-        ];
-
-        const existingNames = new Set(contacts.map((c) => c.name.toLowerCase()));
-        for (const fb of fallbackLeaders) {
-          if (contacts.length >= 2) break;
-          if (existingNames.has(fb.name.toLowerCase())) continue;
-          contacts.push({
-            ...fb,
-            linkedinUrl: `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(fb.title + " " + savedCompany.name)}`,
-            companyName: savedCompany.name,
-          });
-        }
-
-        console.log(`[Pipeline] Added fallback contacts for ${savedCompany.name} (now ${contacts.length} total)`);
+        console.log(`[Pipeline] Warning: ${savedCompany.name} only has ${contacts.length} contacts (could not find more real names)`);
       }
 
       for (const contact of contacts) {

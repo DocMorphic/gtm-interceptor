@@ -34,6 +34,8 @@ export function SearchStatus() {
     try {
       await fetch("/api/search/run", { method: "POST" });
       await fetchStatus();
+      // Refresh the page so the server component re-renders with new data
+      window.location.reload();
     } catch {
       // Error handled by status refresh
     } finally {

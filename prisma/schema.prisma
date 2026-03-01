@@ -1,10 +1,9 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
 model SearchRun {
@@ -35,9 +34,15 @@ model Contact {
   name           String
   title          String?
   linkedinUrl    String   @unique
-  relevanceScore Int      @default(0)
-  whyContact     String?
-  companyId      String
-  discoveredAt   DateTime @default(now())
-  company        Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  relevanceScore       Int      @default(0)
+  whyContact           String?
+  companyId            String
+  discoveredAt         DateTime @default(now())
+  
+  // PhantomBuster Activity Tracking
+  lastActivityAt       DateTime?
+  recentActivity       String?
+  activityCheckPending Boolean  @default(false)
+  
+  company              Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
 }

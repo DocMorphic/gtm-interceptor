@@ -20,122 +20,7 @@ interface GeminiContactExtraction {
   }>;
 }
 
-const FALLBACK_ROLES = [
-  // C-suite & founders
-  "CEO",
-  "CTO",
-  "COO",
-  "CFO",
-  "CMO",
-  "CIO",
-  "CISO",
-  "CPO",
-  "Co-Founder",
-  "Founder",
-  "Owner",
-  "President",
-  "Managing Director",
-  "General Manager",
-  // VP-level
-  "VP Engineering",
-  "VP Manufacturing",
-  "VP Operations",
-  "VP Quality",
-  "VP Supply Chain",
-  "VP Production",
-  "VP Technology",
-  "VP Digital Transformation",
-  "VP Business Development",
-  "VP Sales",
-  "VP Procurement",
-  "VP R&D",
-  "VP Product",
-  "VP Strategy",
-  // Director-level
-  "Director of Engineering",
-  "Director of Manufacturing",
-  "Director of Operations",
-  "Director of Quality",
-  "Director of Supply Chain",
-  "Director of Production",
-  "Director of Technology",
-  "Director of IT",
-  "Director of Digital Transformation",
-  "Director of Business Development",
-  "Director of Procurement",
-  "Director of R&D",
-  "Director of Innovation",
-  "Director of Continuous Improvement",
-  "Director of Lean Manufacturing",
-  // Head-level
-  "Head of Engineering",
-  "Head of Manufacturing",
-  "Head of Operations",
-  "Head of Quality",
-  "Head of Production",
-  "Head of Technology",
-  "Head of Digital",
-  "Head of Supply Chain",
-  "Head of Procurement",
-  "Head of R&D",
-  "Head of Innovation",
-  "Head of IT",
-  "Head of Business Development",
-  "Head of Sales",
-  "Head of Partnerships",
-  // Plant & site leadership
-  "Plant Manager",
-  "Plant Director",
-  "Site Manager",
-  "Factory Manager",
-  "Production Manager",
-  "Operations Manager",
-  "Manufacturing Manager",
-  "Quality Manager",
-  // Senior management
-  "Senior Vice President",
-  "Senior Director",
-  "Senior Manager Operations",
-  "Senior Manager Manufacturing",
-  "Senior Manager Quality",
-  "Program Manager",
-  "Technical Director",
-  "Engineering Manager",
-  "Supply Chain Manager",
-  "Procurement Manager",
-  "Purchasing Manager",
-  "Buyer",
-  "Senior Buyer",
-  "Strategic Sourcing Manager",
-  // Digital & tech roles
-  "Digital Transformation Lead",
-  "Industry 4.0 Lead",
-  "Smart Factory Lead",
-  "Automation Manager",
-  "Data Science Manager",
-  "AI Lead",
-  "IoT Manager",
-  "MES Manager",
-  "ERP Manager",
-  // Board & advisory
-  "Board Member",
-  "Advisory Board Member",
-  "Non-Executive Director",
-  "Chairman",
-  "Supervisory Board",
-  "Partner",
-];
-
 const MIN_CONTACTS = 2;
-
-/**
- * Build a LinkedIn search URL that always works (never 404s).
- * Links to LinkedIn's people search filtered by the person's name + company.
- */
-function buildLinkedInSearchUrl(name: string, companyName: string): string {
-  const keywords = `${name} ${companyName}`;
-  return `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(keywords)}`;
-}
 
 /**
  * Check if a URL is a real LinkedIn profile URL (not a search or invented slug).
@@ -174,16 +59,29 @@ For each person found, extract:
 - whyContact: 1 sentence explaining why sales should contact this person
 
 CRITICAL RULES:
+- ONLY include people whose REAL FULL NAME you found in the search results. A real name is like "John Smith" or "Maria Müller".
+- NEVER use placeholder names like "Unknown", "Unknown Name", "Unknown C-Level Executive", "CEO of CompanyName", "Not enough info", etc. If you don't know the person's actual name, DO NOT include them.
+- ONLY include people who have a REAL LinkedIn profile URL (https://www.linkedin.com/in/...) that appears VERBATIM in the search results. If you cannot find their exact LinkedIn profile URL, DO NOT include them at all.
 - DO NOT invent or construct LinkedIn URLs. Only use URLs that appear word-for-word in the search results.
-- If you cannot find the exact URL, set linkedinUrl to "" — we will generate a search link.
-- Include people even without URLs.
+- Skip anyone without a verified LinkedIn profile URL. We only want contacts we can actually link to.
 - Return max 7 contacts, sorted by relevanceScore descending.
 
 Return JSON: { "contacts": [...] }
-If no contacts are found, return: { "contacts": [] }
+If no contacts are found at all, return: { "contacts": [] }
 `);
 
-  return extracted.contacts || [];
+  // Filter out garbage names at the code level
+  const validContacts = (extracted.contacts || []).filter((c) => {
+    const name = c.name.toLowerCase().trim();
+    if (!name || name.length < 3) return false;
+    if (name.includes("unknown")) return false;
+    if (name.includes("not enough")) return false;
+    if (name.startsWith("ceo of") || name.startsWith("cto of") || name.startsWith("coo of") || name.startsWith("cfo of")) return false;
+    if (c.title?.toLowerCase() === "unknown") return false;
+    return true;
+  });
+
+  return validContacts;
 }
 
 export async function discoverAndRankContacts(
@@ -192,10 +90,10 @@ export async function discoverAndRankContacts(
 ): Promise<DiscoveredContact[]> {
   const allContacts: Map<string, GeminiContactExtraction["contacts"][0]> = new Map();
 
-  // --- Round 1: Search with the ICP target roles ---
+  // --- Round 1: site:linkedin.com/in/ search with ICP target roles ---
   try {
-    const roleList = targetRoles.slice(0, 5).join(", ");
-    const query1 = `LinkedIn "${companyName}" employees ${roleList}`;
+    const roleList = targetRoles.slice(0, 5).join(" OR ");
+    const query1 = `site:linkedin.com/in/ "${companyName}" ${roleList}`;
     const round1 = await searchAndExtract(companyName, query1);
     for (const c of round1) {
       const key = c.name.toLowerCase().trim();
@@ -205,11 +103,10 @@ export async function discoverAndRankContacts(
     console.error(`[Contacts] Round 1 failed for ${companyName}:`, err);
   }
 
-  // --- Round 2 (fallback): If we have < MIN_CONTACTS, search for C-suite / founders ---
+  // --- Round 2 (fallback): broader leadership search on linkedin.com/in/ ---
   if (allContacts.size < MIN_CONTACTS) {
     try {
-      const fallbackRoles = FALLBACK_ROLES.join(" OR ");
-      const query2 = `LinkedIn "${companyName}" ${fallbackRoles}`;
+      const query2 = `site:linkedin.com/in/ "${companyName}" CEO OR CTO OR COO OR "Managing Director" OR "VP" OR "Head of" OR "Director"`;
       const round2 = await searchAndExtract(companyName, query2);
       for (const c of round2) {
         const key = c.name.toLowerCase().trim();
@@ -220,10 +117,10 @@ export async function discoverAndRankContacts(
     }
   }
 
-  // --- Round 3 (last resort): Direct company leadership search ---
+  // --- Round 3 (last resort): just the company name on linkedin profiles ---
   if (allContacts.size < MIN_CONTACTS) {
     try {
-      const query3 = `"${companyName}" CEO OR CTO OR "Managing Director" OR founder site:linkedin.com`;
+      const query3 = `site:linkedin.com/in/ "${companyName}"`;
       const round3 = await searchAndExtract(companyName, query3);
       for (const c of round3) {
         const key = c.name.toLowerCase().trim();
@@ -234,21 +131,14 @@ export async function discoverAndRankContacts(
     }
   }
 
-  // --- Finalize: fix LinkedIn URLs and sort ---
+  // --- Finalize: only keep contacts with real LinkedIn profile URLs ---
   const results: DiscoveredContact[] = Array.from(allContacts.values())
+    .filter((c) => c.linkedinUrl && isRealProfileUrl(c.linkedinUrl))
     .map((c) => {
-      // Only keep a profile URL if it's genuinely a real /in/ URL from search results
-      let finalUrl: string;
-      if (c.linkedinUrl && isRealProfileUrl(c.linkedinUrl)) {
-        // Normalize to https://www.linkedin.com/in/slug
-        const match = c.linkedinUrl.match(/linkedin\.com\/in\/([a-zA-Z0-9_-]+)/);
-        finalUrl = match
-          ? `https://www.linkedin.com/in/${match[1]}`
-          : buildLinkedInSearchUrl(c.name, companyName);
-      } else {
-        // Always fall back to a search URL — these NEVER 404
-        finalUrl = buildLinkedInSearchUrl(c.name, companyName);
-      }
+      const match = c.linkedinUrl.match(/linkedin\.com\/in\/([a-zA-Z0-9_-]+)/);
+      const finalUrl = match
+        ? `https://www.linkedin.com/in/${match[1]}`
+        : c.linkedinUrl;
 
       return {
         name: c.name,
